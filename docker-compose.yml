@@ -1,0 +1,85 @@
+
+
+services:
+  bliss-app:
+    build: .
+    container_name: bliss-app
+    volumes:
+      - .:/var/www
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+    working_dir: /var/www
+    user: "${UID:-1000}:${GID:-1000}"
+    depends_on:
+      bliss-mysql:
+        condition: service_healthy
+    networks:
+      - bliss-network
+
+  bliss-nginx:
+    image: nginx:alpine
+    container_name: bliss-nginx
+    ports:
+      - "8080:80"  # Web access
+    volumes:
+      - ./:/var/www
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - bliss-app
+    networks:
+      - bliss-network
+
+  bliss-mysql:
+    image: mysql:8.0
+    container_name: bliss-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bliss
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_USER: bliss
+      MYSQL_PASSWORD: secret
+      MYSQL_INITDB_SKIP_TZINFO: 1
+      TZ: Africa/Nairobi
+    ports:
+      - "3307:3306"  # Changed from standard 3306
+    volumes:
+      - dbdata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 30s
+      retries: 15
+      start_period: 60s
+    networks:
+      - bliss-network
+
+  bliss-phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: bliss-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8081:80"  # Database admin
+    environment:
+      PMA_HOST: bliss-mysql
+      MYSQL_ROOT_PASSWORD: secret
+    depends_on:
+      - bliss-mysql
+    networks:
+      - bliss-network
+
+  bliss-redis:
+    image: redis:alpine
+    container_name: bliss-redis
+    ports:
+      - "6380:6379"  # Changed from standard 6379
+    networks:
+      - bliss-network
+
+networks:
+  bliss-network:
+    driver: bridge
+
+volumes:
+  dbdata:
