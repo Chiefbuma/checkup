@@ -36,55 +36,89 @@ class RegistrationResource extends Resource
                 Forms\Components\Section::make('Patient Demographics')
                     ->description('Basic patient information')
                     ->icon('heroicon-o-user-circle')
+                    ->columns(1)
                     ->schema([
-                        Forms\Components\Grid::make(4)
-                            ->schema([
-                                Forms\Components\TextInput::make('first_name')->label('First Name')->required()->maxLength(100),
-                                Forms\Components\TextInput::make('middle_name')->label('Middle Name')->maxLength(100),
-                                Forms\Components\TextInput::make('surname')->label('Last Name')->required()->maxLength(100),
-                                Forms\Components\TextInput::make('age')->label('Age')->numeric()->disabled()->dehydrated(true),
-                                Forms\Components\TextInput::make('phone')->label('Phone Number')->tel()->maxLength(20)->unique(ignoreRecord: true)
-                                    ->reactive()
-                                    ->afterStateUpdated(function ($state) {
-                                        if (!empty($state) && Registration::where('phone', $state)->exists()) {
-                                            Notification::make()
-                                                ->title('Duplicate Phone Number')
-                                                ->body("The phone number \"{$state}\" already exists.")
-                                                ->danger()
-                                                ->send();
-                                        }
-                                    }),
-                                Forms\Components\TextInput::make('email')->label('Email Address')->email()->maxLength(150)->unique(ignoreRecord: true)
-                                    ->reactive()
-                                    ->afterStateUpdated(function ($state) {
-                                        if (!empty($state) && Registration::where('email', $state)->exists()) {
-                                            Notification::make()
-                                                ->title('Duplicate Email')
-                                                ->body("The email \"{$state}\" already exists.")
-                                                ->danger()
-                                                ->send();
-                                        }
-                                    }),
-                            ]),
-                        Forms\Components\Select::make('sex')
-                            ->label('Gender')
-                            ->options(['Male' => 'Male', 'Female' => 'Female', 'Other' => 'Other'])
-                            ->required(),
+                        Forms\Components\TextInput::make('first_name')
+                            ->label('First Name')
+                            ->required()
+                            ->maxLength(100)
+                            ->inlineLabel(),
+                        Forms\Components\TextInput::make('middle_name')
+                            ->label('Middle Name')
+                            ->maxLength(100)
+                            ->inlineLabel(),
+                        Forms\Components\TextInput::make('surname')
+                            ->label('Last Name')
+                            ->required()
+                            ->maxLength(100)
+                            ->inlineLabel(),
                         Forms\Components\DatePicker::make('dob')
                             ->label('Date of Birth')
                             ->required()
+                            ->inlineLabel()
                             ->reactive()
                             ->afterStateUpdated(fn ($state, callable $set) => $state ? $set('age', Carbon::parse($state)->age) : null),
+                        Forms\Components\TextInput::make('age')
+                            ->label('Age')
+                            ->numeric()
+                            ->disabled()
+                            ->dehydrated(true)
+                            ->inlineLabel(),
+                        Forms\Components\TextInput::make('phone')
+                            ->label('Phone Number')
+                            ->tel()
+                            ->maxLength(20)
+                            ->unique(ignoreRecord: true)
+                            ->inlineLabel()
+                            ->reactive()
+                            ->afterStateUpdated(function ($state) {
+                                if (!empty($state) && Registration::where('phone', $state)->exists()) {
+                                    Notification::make()
+                                        ->title('Duplicate Phone Number')
+                                        ->body("The phone number \"{$state}\" already exists.")
+                                        ->danger()
+                                        ->send();
+                                }
+                            }),
+                        Forms\Components\TextInput::make('email')
+                            ->label('Email Address')
+                            ->email()
+                            ->maxLength(150)
+                            ->unique(ignoreRecord: true)
+                            ->inlineLabel()
+                            ->reactive()
+                            ->afterStateUpdated(function ($state) {
+                                if (!empty($state) && Registration::where('email', $state)->exists()) {
+                                    Notification::make()
+                                        ->title('Duplicate Email')
+                                        ->body("The email \"{$state}\" already exists.")
+                                        ->danger()
+                                        ->send();
+                                }
+                            }),
+                        Forms\Components\Select::make('sex')
+                            ->label('Gender')
+                            ->options(['Male' => 'Male', 'Female' => 'Female'])
+                            ->required()
+                            ->inlineLabel(),
                         Forms\Components\Select::make('corporate_id')
                             ->label('Corporate/Organization')
                             ->relationship('corporate', 'name')
+                            ->inlineLabel()
                             ->createOptionForm([
-                                Forms\Components\TextInput::make('name')->required()->label('Corporate Name')->maxLength(255),
+                                Forms\Components\TextInput::make('name')
+                                    ->required()
+                                    ->label('Corporate Name')
+                                    ->maxLength(255)
+                                    ->inlineLabel(),
                             ])
                             ->createOptionAction(fn (\Filament\Forms\Components\Actions\Action $action) =>
-                                $action->modalHeading('Create Corporate')->modalSubmitActionLabel('Create')->modalWidth('lg')
+                                $action->modalHeading('Create Corporate')
+                                    ->modalSubmitActionLabel('Create')
+                                    ->modalWidth('lg')
                             ),
-                        Forms\Components\Hidden::make('user_id')->default(fn () => auth()->id()),
+                        Forms\Components\Hidden::make('user_id')
+                            ->default(fn () => auth()->id()),
                     ])
                     ->collapsible(),
             ]);
@@ -98,9 +132,19 @@ class RegistrationResource extends Resource
                 Tables\Columns\TextColumn::make('full_name')
                     ->label('Patient Name')
                     ->getStateUsing(fn ($record) => trim("{$record->first_name} {$record->surname}"))
-                    ->sortable()->searchable()->weight('bold'),
-                Tables\Columns\TextColumn::make('corporate.name')->label('Organization')->sortable()->searchable()->badge(),
-                Tables\Columns\TextColumn::make('age')->label('Age')->sortable()->badge()->color('primary'),
+                    ->sortable()
+                    ->searchable()
+                    ->weight('bold'),
+                Tables\Columns\TextColumn::make('corporate.name')
+                    ->label('Organization')
+                    ->sortable()
+                    ->searchable()
+                    ->badge(),
+                Tables\Columns\TextColumn::make('age')
+                    ->label('Age')
+                    ->sortable()
+                    ->badge()
+                    ->color('primary'),
             ])
             ->actions([
                 # -------- VITALS --------
@@ -109,42 +153,113 @@ class RegistrationResource extends Resource
                     ->color('success')
                     ->icon('heroicon-o-heart')
                     ->form([
-                        Forms\Components\Section::make('Patient Summary')->description('Current patient information')->icon('heroicon-o-identification')->schema([
-                            Forms\Components\Grid::make(2)->schema([
-                                Forms\Components\Grid::make(1)->schema([
-                                    Forms\Components\TextInput::make('first_name')->label('First Name')->disabled()->inlineLabel(),
-                                    Forms\Components\TextInput::make('middle_name')->label('Middle Name')->disabled()->inlineLabel(),
-                                    Forms\Components\TextInput::make('surname')->label('Last Name')->disabled()->inlineLabel(),
-                                ]),
-                                Forms\Components\Grid::make(1)->schema([
-                                    Forms\Components\TextInput::make('age')->label('Age')->disabled()->inlineLabel(),
-                                    Forms\Components\TextInput::make('phone')->label('Phone')->disabled()->inlineLabel(),
-                                    Forms\Components\TextInput::make('email')->label('Email')->disabled()->inlineLabel(),
-                                ]),
-                            ]),
-                        ])->collapsible(),
-                        Forms\Components\Section::make('Vital Signs')->description('Current physiological measurements')->icon('heroicon-o-chart-bar')->schema([
-                            Forms\Components\Grid::make(2)->schema([
-                                Forms\Components\Grid::make(1)->schema([
-                                    Forms\Components\TextInput::make('bp_systolic')->label('BP Systolic')->numeric()->suffix('mmHg')->required()->inlineLabel(),
-                                    Forms\Components\TextInput::make('bp_diastolic')->label('BP Diastolic')->numeric()->suffix('mmHg')->required()->inlineLabel(),
-                                    Forms\Components\TextInput::make('pulse')->label('Pulse Rate')->numeric()->suffix('bpm')->required()->inlineLabel(),
-                                ]),
-                                Forms\Components\Grid::make(1)->schema([
-                                    Forms\Components\TextInput::make('temp')->label('Temperature')->numeric()->suffix('°C')->required()->inlineLabel(),
-                                    Forms\Components\TextInput::make('rbs')->label('Random Blood Sugar')->numeric()->suffix('mg/dL')->required()->inlineLabel(),
-                                ]),
-                            ]),
-                        ])->collapsible(),
+                        Forms\Components\Section::make('Patient Summary')
+                            ->description('Current patient information')
+                            ->icon('heroicon-o-identification')
+                            ->schema([
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\Grid::make(1)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('first_name')
+                                                    ->label('First Name')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('middle_name')
+                                                    ->label('Middle Name')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('surname')
+                                                    ->label('Last Name')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                            ]),
+                                        Forms\Components\Grid::make(1)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('age')
+                                                    ->label('Age')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('phone')
+                                                    ->label('Phone')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('email')
+                                                    ->label('Email')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                            ]),
+                                    ]),
+                            ])
+                            ->collapsible(),
+                        Forms\Components\Section::make('Vital Signs')
+                            ->description('Current physiological measurements')
+                            ->icon('heroicon-o-chart-bar')
+                            ->schema([
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\Grid::make(1)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('bp_systolic')
+                                                    ->label('BP Systolic')
+                                                    ->numeric()
+                                                    ->suffix('mmHg')
+                                                    ->required()
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('bp_diastolic')
+                                                    ->label('BP Diastolic')
+                                                    ->numeric()
+                                                    ->suffix('mmHg')
+                                                    ->required()
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('pulse')
+                                                    ->label('Pulse Rate')
+                                                    ->numeric()
+                                                    ->suffix('bpm')
+                                                    ->required()
+                                                    ->inlineLabel(),
+                                            ]),
+                                        Forms\Components\Grid::make(1)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('temp')
+                                                    ->label('Temperature')
+                                                    ->numeric()
+                                                    ->suffix('°C')
+                                                    ->required()
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('rbs')
+                                                    ->label('Random Blood Sugar')
+                                                    ->numeric()
+                                                    ->suffix('mg/dL')
+                                                    ->required()
+                                                    ->inlineLabel(),
+                                            ]),
+                                    ]),
+                            ])
+                            ->collapsible(),
                     ])
                     ->fillForm(fn ($record) => array_merge(
                         $record->vitals()->exists() ? $record->vitals()->first()->toArray() : [],
-                        ['first_name'=>$record->first_name,'middle_name'=>$record->middle_name,'surname'=>$record->surname,'age'=>$record->age,'phone'=>$record->phone,'email'=>$record->email]
+                        [
+                            'first_name'  => $record->first_name,
+                            'middle_name' => $record->middle_name,
+                            'surname'     => $record->surname,
+                            'age'         => $record->age,
+                            'phone'       => $record->phone,
+                            'email'       => $record->email
+                        ]
                     ))
                     ->action(function (array $data, $record) {
                         $data['registration_id'] = $record->id;
                         $data['user_id'] = auth()->id();
-                        unset($data['first_name'],$data['middle_name'],$data['surname'],$data['age'],$data['phone'],$data['email']);
+                        unset(
+                            $data['first_name'],
+                            $data['middle_name'],
+                            $data['surname'],
+                            $data['age'],
+                            $data['phone'],
+                            $data['email']
+                        );
                         if ($record->vitals()->exists()) {
                             $record->vitals()->update($data);
                         } else {
@@ -154,86 +269,206 @@ class RegistrationResource extends Resource
 
                 # -------- NUTRITION --------
                 Action::make('nutrition')
-                    ->label(fn ($record) => $record->vitals()->exists() ? ($record->nutritions()->exists() ? 'Edit Nutrition' : 'Add Nutrition') : 'Locked')
+                    ->label(fn ($record) => $record->vitals()->exists() 
+                        ? ($record->nutritions()->exists() ? 'Edit Nutrition' : 'Add Nutrition') 
+                        : 'Locked'
+                    )
                     ->color('warning')
                     ->icon('heroicon-o-cake')
-                    ->disabled(fn ($record) => ! $record->vitals()->exists())
+                    ->disabled(fn ($record) => !$record->vitals()->exists())
                     ->form([
-                        Forms\Components\Section::make('Patient Summary')->description('Current patient information')->icon('heroicon-o-identification')->schema([
-                            Forms\Components\Grid::make(2)->schema([
-                                Forms\Components\Grid::make(1)->schema([
-                                    Forms\Components\TextInput::make('first_name')->label('First Name')->disabled()->inlineLabel(),
-                                    Forms\Components\TextInput::make('middle_name')->label('Middle Name')->disabled()->inlineLabel(),
-                                    Forms\Components\TextInput::make('surname')->label('Last Name')->disabled()->inlineLabel(),
-                                ]),
-                                Forms\Components\Grid::make(1)->schema([
-                                    Forms\Components\TextInput::make('age')->label('Age')->disabled()->inlineLabel(),
-                                    Forms\Components\TextInput::make('phone')->label('Phone')->disabled()->inlineLabel(),
-                                    Forms\Components\TextInput::make('email')->label('Email')->disabled()->inlineLabel(),
-                                ]),
-                            ]),
-                        ])->collapsible(),
-                        Forms\Components\Section::make('Latest Vitals')->description('Recent physiological measurements')->icon('heroicon-o-heart')->schema([
-                            Forms\Components\Grid::make(2)->schema([
-                                Forms\Components\Grid::make(1)->schema([
-                                    Forms\Components\TextInput::make('bp_systolic')->label('BP Systolic')->disabled()->suffix('mmHg')->inlineLabel(),
-                                    Forms\Components\TextInput::make('bp_diastolic')->label('BP Diastolic')->disabled()->suffix('mmHg')->inlineLabel(),
-                                    Forms\Components\TextInput::make('pulse')->label('Pulse Rate')->disabled()->suffix('bpm')->inlineLabel(),
-                                ]),
-                                Forms\Components\Grid::make(1)->schema([
-                                    Forms\Components\TextInput::make('temp')->label('Temperature')->disabled()->suffix('°C')->inlineLabel(),
-                                    Forms\Components\TextInput::make('rbs')->label('Random Blood Sugar')->disabled()->suffix('mg/dL')->inlineLabel(),
-                                ]),
-                            ]),
-                        ])->collapsible(),
-                        Forms\Components\Section::make('Nutritional Assessment')->description('Body composition and nutrition notes')->icon('heroicon-o-scale')->schema([
-                            Forms\Components\Grid::make(2)->schema([
-                                Forms\Components\Grid::make(1)->schema([
-                                    Forms\Components\TextInput::make('height')->label('Height (cm)')->numeric()->required()->reactive()
-                                        ->afterStateUpdated(function ($state, callable $set, $get) {
-                                            $weight = $get('weight') ?? 0;
-                                            if ($state && $weight) {
-                                                $heightInMeters = $state / 100;
-                                                $bmi = round($weight / ($heightInMeters ** 2), 1);
-                                                $set('bmi', $bmi);
-                                                $set('lower_limit_weight', round(18.5 * ($heightInMeters ** 2), 1));
-                                                $set('weight_limit_weight', round(25 * ($heightInMeters ** 2), 1));
-                                            }
-                                        }),
-                                    Forms\Components\TextInput::make('weight')->label('Weight (kg)')->numeric()->required()->reactive()
-                                        ->afterStateUpdated(function ($state, callable $set, $get) {
-                                            $height = $get('height') ?? 0;
-                                            if ($state && $height) {
-                                                $heightInMeters = $height / 100;
-                                                $bmi = round($state / ($heightInMeters ** 2), 1);
-                                                $set('bmi', $bmi);
-                                                $set('lower_limit_weight', round(18.5 * ($heightInMeters ** 2), 1));
-                                                $set('weight_limit_weight', round(25 * ($heightInMeters ** 2), 1));
-                                            }
-                                        }),
-                                    Forms\Components\TextInput::make('bmi')->label('BMI')->numeric()->disabled()->inlineLabel(),
-                                    Forms\Components\TextInput::make('visceral_fat')->label('Visceral Fat')->numeric()->suffix('level')->minValue(1)->maxValue(59)->inlineLabel(),
-                                ]),
-                                Forms\Components\Grid::make(1)->schema([
-                                    Forms\Components\TextInput::make('body_fat_percent')->label('Body Fat %')->numeric()->suffix('%')->minValue(1)->maxValue(100)->inlineLabel(),
-                                    Forms\Components\TextInput::make('lower_limit_weight')->label('Lower Weight Limit')->numeric()->suffix('kg')->disabled()->inlineLabel(),
-                                    Forms\Components\TextInput::make('weight_limit_weight')->label('Upper Weight Limit')->numeric()->suffix('kg')->disabled()->inlineLabel(),
-                                ]),
-                            ]),
-                            Forms\Components\Textarea::make('notes_nutritionist')->label('Nutritionist Notes')->rows(4)->placeholder('Enter detailed nutrition assessment...')->columnSpanFull(),
-                        ])->collapsible(),
+                        Forms\Components\Section::make('Patient Summary')
+                            ->description('Current patient information')
+                            ->icon('heroicon-o-identification')
+                            ->schema([
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\Grid::make(1)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('first_name')
+                                                    ->label('First Name')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('middle_name')
+                                                    ->label('Middle Name')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('surname')
+                                                    ->label('Last Name')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                            ]),
+                                        Forms\Components\Grid::make(1)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('age')
+                                                    ->label('Age')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('phone')
+                                                    ->label('Phone')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('email')
+                                                    ->label('Email')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                            ]),
+                                    ]),
+                            ])
+                            ->collapsible(),
+                        Forms\Components\Section::make('Latest Vitals')
+                            ->description('Recent physiological measurements')
+                            ->icon('heroicon-o-heart')
+                            ->schema([
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\Grid::make(1)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('bp_systolic')
+                                                    ->label('BP Systolic')
+                                                    ->disabled()
+                                                    ->suffix('mmHg')
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('bp_diastolic')
+                                                    ->label('BP Diastolic')
+                                                    ->disabled()
+                                                    ->suffix('mmHg')
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('pulse')
+                                                    ->label('Pulse Rate')
+                                                    ->disabled()
+                                                    ->suffix('bpm')
+                                                    ->inlineLabel(),
+                                            ]),
+                                        Forms\Components\Grid::make(1)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('temp')
+                                                    ->label('Temperature')
+                                                    ->disabled()
+                                                    ->suffix('°C')
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('rbs')
+                                                    ->label('Random Blood Sugar')
+                                                    ->disabled()
+                                                    ->suffix('mg/dL')
+                                                    ->inlineLabel(),
+                                            ]),
+                                    ]),
+                            ])
+                            ->collapsible(),
+                        Forms\Components\Section::make('Nutritional Assessment')
+                            ->description('Body composition and nutrition notes')
+                            ->icon('heroicon-o-scale')
+                            ->schema([
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\Grid::make(1)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('height')
+                                                    ->label('Height (cm)')
+                                                    ->numeric()
+                                                    ->required()
+                                                    ->reactive()
+                                                    ->afterStateUpdated(function ($state, callable $set, $get) {
+                                                        $weight = $get('weight') ?? 0;
+                                                        if ($state && $weight) {
+                                                            $heightInMeters = $state / 100;
+                                                            $bmi = round($weight / ($heightInMeters ** 2), 1);
+                                                            $set('bmi', $bmi);
+                                                            $set('lower_limit_weight', round(18.5 * ($heightInMeters ** 2), 1));
+                                                            $set('weight_limit_weight', round(25 * ($heightInMeters ** 2), 1));
+                                                        }
+                                                    }),
+                                                Forms\Components\TextInput::make('weight')
+                                                    ->label('Weight (kg)')
+                                                    ->numeric()
+                                                    ->required()
+                                                    ->reactive()
+                                                    ->afterStateUpdated(function ($state, callable $set, $get) {
+                                                        $height = $get('height') ?? 0;
+                                                        if ($state && $height) {
+                                                            $heightInMeters = $height / 100;
+                                                            $bmi = round($state / ($heightInMeters ** 2), 1);
+                                                            $set('bmi', $bmi);
+                                                            $set('lower_limit_weight', round(18.5 * ($heightInMeters ** 2), 1));
+                                                            $set('weight_limit_weight', round(25 * ($heightInMeters ** 2), 1));
+                                                        }
+                                                    }),
+                                                Forms\Components\TextInput::make('bmi')
+                                                    ->label('BMI')
+                                                    ->numeric()
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('visceral_fat')
+                                                    ->label('Visceral Fat')
+                                                    ->numeric()
+                                                    ->suffix('level')
+                                                    ->minValue(1)
+                                                    ->maxValue(59)
+                                                    ->inlineLabel(),
+                                            ]),
+                                        Forms\Components\Grid::make(1)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('body_fat_percent')
+                                                    ->label('Body Fat %')
+                                                    ->numeric()
+                                                    ->suffix('%')
+                                                    ->minValue(1)
+                                                    ->maxValue(100)
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('lower_limit_weight')
+                                                    ->label('Lower Weight Limit')
+                                                    ->numeric()
+                                                    ->suffix('kg')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('weight_limit_weight')
+                                                    ->label('Upper Weight Limit')
+                                                    ->numeric()
+                                                    ->suffix('kg')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                            ]),
+                                    ]),
+                                Forms\Components\Textarea::make('notes_nutritionist')
+                                    ->label('Nutritionist Notes')
+                                    ->rows(4)
+                                    ->placeholder('Enter detailed nutrition assessment...')
+                                    ->columnSpanFull(),
+                            ])
+                            ->collapsible(),
                     ])
                     ->fillForm(fn ($record) => array_merge(
                         $record->nutritions()->exists() ? $record->nutritions()->first()->toArray() : [],
                         $record->vitals()->exists() ? $record->vitals()->first()->toArray() : [],
-                        ['first_name'=>$record->first_name,'middle_name'=>$record->middle_name,'surname'=>$record->surname,'age'=>$record->age,'phone'=>$record->phone,'email'=>$record->email]
+                        [
+                            'first_name'  => $record->first_name,
+                            'middle_name' => $record->middle_name,
+                            'surname'     => $record->surname,
+                            'age'         => $record->age,
+                            'phone'       => $record->phone,
+                            'email'       => $record->email
+                        ]
                     ))
                     ->action(function (array $data, $record) {
                         $data['registration_id'] = $record->id;
                         $data['user_id'] = auth()->id();
-                        unset($data['first_name'],$data['middle_name'],$data['surname'],$data['age'],$data['phone'],$data['email']);
-                        unset($data['bp_systolic'],$data['bp_diastolic'],$data['pulse'],$data['temp'],$data['rbs']);
-                        unset($data['bmi'],$data['lower_limit_weight'],$data['weight_limit_weight']);
+                        unset(
+                            $data['first_name'],
+                            $data['middle_name'],
+                            $data['surname'],
+                            $data['age'],
+                            $data['phone'],
+                            $data['email'],
+                            $data['bp_systolic'],
+                            $data['bp_diastolic'],
+                            $data['pulse'],
+                            $data['temp'],
+                            $data['rbs'],
+                            $data['bmi'],
+                            $data['lower_limit_weight'],
+                            $data['weight_limit_weight']
+                        );
                         if ($record->nutritions()->exists()) {
                             $record->nutritions()->update($data);
                         } else {
@@ -243,62 +478,143 @@ class RegistrationResource extends Resource
 
                 # -------- CLINICAL --------
                 Action::make('clinical')
-                    ->label(fn ($record) => $record->vitals()->exists() ? ($record->clinicals()->exists() ? 'Edit Clinical' : 'Add Clinical') : 'Locked')
+                    ->label(fn ($record) => $record->vitals()->exists() 
+                        ? ($record->clinicals()->exists() ? 'Edit Clinical' : 'Add Clinical') 
+                        : 'Locked'
+                    )
                     ->color('info')
                     ->icon('heroicon-o-document-text')
-                    ->disabled(fn ($record) => ! $record->vitals()->exists())
+                    ->disabled(fn ($record) => !$record->vitals()->exists())
                     ->form([
                         Forms\Components\Section::make('Patient Summary')
                             ->description('Current patient information')
                             ->icon('heroicon-o-identification')
                             ->schema([
-                                Forms\Components\Grid::make(2)->schema([
-                                    Forms\Components\Grid::make(1)->schema([
-                                        Forms\Components\TextInput::make('first_name')->label('First Name')->disabled()->inlineLabel(),
-                                        Forms\Components\TextInput::make('middle_name')->label('Middle Name')->disabled()->inlineLabel(),
-                                        Forms\Components\TextInput::make('surname')->label('Last Name')->disabled()->inlineLabel(),
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\Grid::make(1)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('first_name')
+                                                    ->label('First Name')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('middle_name')
+                                                    ->label('Middle Name')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('surname')
+                                                    ->label('Last Name')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                            ]),
+                                        Forms\Components\Grid::make(1)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('age')
+                                                    ->label('Age')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('phone')
+                                                    ->label('Phone')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('email')
+                                                    ->label('Email')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                            ]),
                                     ]),
-                                    Forms\Components\Grid::make(1)->schema([
-                                        Forms\Components\TextInput::make('age')->label('Age')->disabled()->inlineLabel(),
-                                        Forms\Components\TextInput::make('phone')->label('Phone')->disabled()->inlineLabel(),
-                                        Forms\Components\TextInput::make('email')->label('Email')->disabled()->inlineLabel(),
-                                    ]),
-                                ]),
                             ])
                             ->collapsible(),
 
                         Forms\Components\Section::make('Vitals Summary')
                             ->icon('heroicon-o-heart')
                             ->schema([
-                                Forms\Components\Grid::make(2)->schema([
-                                    Forms\Components\Grid::make(1)->schema([
-                                        Forms\Components\TextInput::make('bp_systolic')->label('BP Systolic')->disabled()->suffix('mmHg')->inlineLabel(),
-                                        Forms\Components\TextInput::make('bp_diastolic')->label('BP Diastolic')->disabled()->suffix('mmHg')->inlineLabel(),
-                                        Forms\Components\TextInput::make('pulse')->label('Pulse Rate')->disabled()->suffix('bpm')->inlineLabel(),
-                                        Forms\Components\TextInput::make('temp')->label('Temperature')->disabled()->suffix('°C')->inlineLabel(),
-                                        Forms\Components\TextInput::make('rbs')->label('Random Blood Sugar')->disabled()->suffix('mg/dL')->inlineLabel(),
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\Grid::make(1)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('bp_systolic')
+                                                    ->label('BP Systolic')
+                                                    ->disabled()
+                                                    ->suffix('mmHg')
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('bp_diastolic')
+                                                    ->label('BP Diastolic')
+                                                    ->disabled()
+                                                    ->suffix('mmHg')
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('pulse')
+                                                    ->label('Pulse Rate')
+                                                    ->disabled()
+                                                    ->suffix('bpm')
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('temp')
+                                                    ->label('Temperature')
+                                                    ->disabled()
+                                                    ->suffix('°C')
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('rbs')
+                                                    ->label('Random Blood Sugar')
+                                                    ->disabled()
+                                                    ->suffix('mg/dL')
+                                                    ->inlineLabel(),
+                                            ]),
                                     ]),
-                                ]),
                             ])
                             ->collapsible(),
 
                         Forms\Components\Section::make('Nutrition Summary')
                             ->icon('heroicon-o-scale')
                             ->schema([
-                                Forms\Components\Grid::make(2)->schema([
-                                    Forms\Components\Grid::make(1)->schema([
-                                        Forms\Components\TextInput::make('height')->label('Height')->disabled()->suffix('cm')->inlineLabel(),
-                                        Forms\Components\TextInput::make('weight')->label('Weight')->disabled()->suffix('kg')->inlineLabel(),
-                                        Forms\Components\TextInput::make('bmi')->label('BMI')->disabled()->inlineLabel(),
-                                        Forms\Components\TextInput::make('visceral_fat')->label('Visceral Fat')->disabled()->suffix('level')->inlineLabel(),
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\Grid::make(1)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('height')
+                                                    ->label('Height')
+                                                    ->disabled()
+                                                    ->suffix('cm')
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('weight')
+                                                    ->label('Weight')
+                                                    ->disabled()
+                                                    ->suffix('kg')
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('bmi')
+                                                    ->label('BMI')
+                                                    ->disabled()
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('visceral_fat')
+                                                    ->label('Visceral Fat')
+                                                    ->disabled()
+                                                    ->suffix('level')
+                                                    ->inlineLabel(),
+                                            ]),
+                                        Forms\Components\Grid::make(1)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('body_fat_percent')
+                                                    ->label('Body Fat %')
+                                                    ->disabled()
+                                                    ->suffix('%')
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('lower_limit_weight')
+                                                    ->label('Lower Weight Limit')
+                                                    ->disabled()
+                                                    ->suffix('kg')
+                                                    ->inlineLabel(),
+                                                Forms\Components\TextInput::make('weight_limit_weight')
+                                                    ->label('Upper Weight Limit')
+                                                    ->disabled()
+                                                    ->suffix('kg')
+                                                    ->inlineLabel(),
+                                            ]),
                                     ]),
-                                    Forms\Components\Grid::make(1)->schema([
-                                        Forms\Components\TextInput::make('body_fat_percent')->label('Body Fat %')->disabled()->suffix('%')->inlineLabel(),
-                                        Forms\Components\TextInput::make('lower_limit_weight')->label('Lower Weight Limit')->disabled()->suffix('kg')->inlineLabel(),
-                                        Forms\Components\TextInput::make('weight_limit_weight')->label('Upper Weight Limit')->disabled()->suffix('kg')->inlineLabel(),
-                                    ]),
-                                ]),
-                                Forms\Components\Textarea::make('notes_nutritionist')->label('Nutritionist Notes')->disabled()->rows(4)->placeholder('No nutritionist notes available...')->columnSpanFull(),
+                                Forms\Components\Textarea::make('notes_nutritionist')
+                                    ->label('Nutritionist Notes')
+                                    ->disabled()
+                                    ->rows(4)
+                                    ->placeholder('No nutritionist notes available...')
+                                    ->columnSpanFull(),
                             ])
                             ->collapsible(),
 
@@ -306,8 +622,16 @@ class RegistrationResource extends Resource
                             ->description('Professional medical evaluations')
                             ->icon('heroicon-o-clipboard-document')
                             ->schema([
-                                Forms\Components\Textarea::make('notes_psychologist')->label('Psychology Notes')->rows(5)->placeholder('Psychological assessment and observations...')->columnSpanFull(),
-                                Forms\Components\Textarea::make('notes_doctor')->label('Medical Notes')->rows(5)->placeholder('Medical diagnosis, treatment plan, and recommendations...')->columnSpanFull(),
+                                Forms\Components\Textarea::make('notes_psychologist')
+                                    ->label('Psychology Notes')
+                                    ->rows(5)
+                                    ->placeholder('Psychological assessment and observations...')
+                                    ->columnSpanFull(),
+                                Forms\Components\Textarea::make('notes_doctor')
+                                    ->label('Medical Notes')
+                                    ->rows(5)
+                                    ->placeholder('Medical diagnosis, treatment plan, and recommendations...')
+                                    ->columnSpanFull(),
                             ])
                             ->collapsible(),
                     ])
@@ -315,14 +639,39 @@ class RegistrationResource extends Resource
                         $record->clinicals()->exists() ? $record->clinicals()->first()->toArray() : [],
                         $record->nutritions()->exists() ? $record->nutritions()->first()->toArray() : [],
                         $record->vitals()->exists() ? $record->vitals()->first()->toArray() : [],
-                        ['first_name'=>$record->first_name,'middle_name'=>$record->middle_name,'surname'=>$record->surname,'age'=>$record->age,'phone'=>$record->phone,'email'=>$record->email]
+                        [
+                            'first_name'  => $record->first_name,
+                            'middle_name' => $record->middle_name,
+                            'surname'     => $record->surname,
+                            'age'         => $record->age,
+                            'phone'       => $record->phone,
+                            'email'       => $record->email
+                        ]
                     ))
                     ->action(function (array $data, $record) {
                         $data['registration_id'] = $record->id;
                         $data['user_id'] = auth()->id();
-                        unset($data['first_name'],$data['middle_name'],$data['surname'],$data['age'],$data['phone'],$data['email']);
-                        unset($data['bp_systolic'],$data['bp_diastolic'],$data['pulse'],$data['temp'],$data['rbs']);
-                        unset($data['height'],$data['weight'],$data['bmi'],$data['lower_limit_weight'],$data['weight_limit_weight'],$data['visceral_fat'],$data['body_fat_percent'],$data['notes_nutritionist']);
+                        unset(
+                            $data['first_name'],
+                            $data['middle_name'],
+                            $data['surname'],
+                            $data['age'],
+                            $data['phone'],
+                            $data['email'],
+                            $data['bp_systolic'],
+                            $data['bp_diastolic'],
+                            $data['pulse'],
+                            $data['temp'],
+                            $data['rbs'],
+                            $data['height'],
+                            $data['weight'],
+                            $data['bmi'],
+                            $data['lower_limit_weight'],
+                            $data['weight_limit_weight'],
+                            $data['visceral_fat'],
+                            $data['body_fat_percent'],
+                            $data['notes_nutritionist']
+                        );
                         if ($record->clinicals()->exists()) {
                             $record->clinicals()->update($data);
                         } else {
@@ -330,44 +679,277 @@ class RegistrationResource extends Resource
                         }
                     }),
 
-                # -------- VIEW REPORT --------
-                # -------- VIEW REPORT --------
-Action::make('viewReport')
-    ->label('View Report')
-    ->color('warning')
-    ->icon('heroicon-o-eye')
-    ->modalHeading(fn($record) => 'Wellness Report - ' . $record->first_name . ' ' . $record->surname)
-    ->modalContent(function (Registration $record) {
-        // Generate PDF content directly in the modal
-        $vital = $record->vitals()->first();
-        $nutrition = $record->nutritions()->first();
-        $currentDate = now()->format('F j, Y');
+              # -------- GOALS --------
+Action::make('Add Goal')
+    ->label(fn ($record) => $record->vitals()->exists() 
+        ? ($record->goals()->exists() ? 'Edit Goal' : 'Add Goal') 
+        : 'Locked'
+    )
+    ->color('primary')
+    ->icon('heroicon-o-flag')
+    ->disabled(fn ($record) => !$record->vitals()->exists())
+    ->form([
+        Forms\Components\Section::make('Patient Summary')
+            ->description('Current patient information')
+            ->icon('heroicon-o-identification')
+            ->schema([
+                Forms\Components\Grid::make(2)
+                    ->schema([
+                        Forms\Components\Grid::make(1)
+                            ->schema([
+                                Forms\Components\TextInput::make('first_name')
+                                    ->label('First Name')
+                                    ->disabled()
+                                    ->inlineLabel(),
+                                Forms\Components\TextInput::make('middle_name')
+                                    ->label('Middle Name')
+                                    ->disabled()
+                                    ->inlineLabel(),
+                                Forms\Components\TextInput::make('surname')
+                                    ->label('Last Name')
+                                    ->disabled()
+                                    ->inlineLabel(),
+                            ]),
+                        Forms\Components\Grid::make(1)
+                            ->schema([
+                                Forms\Components\TextInput::make('age')
+                                    ->label('Age')
+                                    ->disabled()
+                                    ->inlineLabel(),
+                                Forms\Components\TextInput::make('phone')
+                                    ->label('Phone')
+                                    ->disabled()
+                                    ->inlineLabel(),
+                                Forms\Components\TextInput::make('email')
+                                    ->label('Email')
+                                    ->disabled()
+                                    ->inlineLabel(),
+                            ]),
+                    ]),
+            ])
+            ->collapsible(),
+
+        Forms\Components\Section::make('Vitals Summary')
+            ->icon('heroicon-o-heart')
+            ->schema([
+                Forms\Components\Grid::make(2)
+                    ->schema([
+                        Forms\Components\Grid::make(1)
+                            ->schema([
+                                Forms\Components\TextInput::make('bp_systolic')
+                                    ->label('BP Systolic')
+                                    ->disabled()
+                                    ->suffix('mmHg')
+                                    ->inlineLabel(),
+                                Forms\Components\TextInput::make('bp_diastolic')
+                                    ->label('BP Diastolic')
+                                    ->disabled()
+                                    ->suffix('mmHg')
+                                    ->inlineLabel(),
+                                Forms\Components\TextInput::make('pulse')
+                                    ->label('Pulse Rate')
+                                    ->disabled()
+                                    ->suffix('bpm')
+                                    ->inlineLabel(),
+                            ]),
+                        Forms\Components\Grid::make(1)
+                            ->schema([
+                                Forms\Components\TextInput::make('temp')
+                                    ->label('Temperature')
+                                    ->disabled()
+                                    ->suffix('°C')
+                                    ->inlineLabel(),
+                                Forms\Components\TextInput::make('rbs')
+                                    ->label('Random Blood Sugar')
+                                    ->disabled()
+                                    ->suffix('mg/dL')
+                                    ->inlineLabel(),
+                            ]),
+                    ]),
+            ])
+            ->collapsible(),
+
+        Forms\Components\Section::make('Nutrition Summary')
+            ->icon('heroicon-o-scale')
+            ->schema([
+                Forms\Components\Grid::make(2)
+                    ->schema([
+                        Forms\Components\Grid::make(1)
+                            ->schema([
+                                Forms\Components\TextInput::make('height')
+                                    ->label('Height')
+                                    ->disabled()
+                                    ->suffix('cm')
+                                    ->inlineLabel(),
+                                Forms\Components\TextInput::make('weight')
+                                    ->label('Weight')
+                                    ->disabled()
+                                    ->suffix('kg')
+                                    ->inlineLabel(),
+                                Forms\Components\TextInput::make('bmi')
+                                    ->label('BMI')
+                                    ->disabled()
+                                    ->inlineLabel(),
+                            ]),
+                        Forms\Components\Grid::make(1)
+                            ->schema([
+                                Forms\Components\TextInput::make('body_fat_percent')
+                                    ->label('Body Fat %')
+                                    ->disabled()
+                                    ->suffix('%')
+                                    ->inlineLabel(),
+                                Forms\Components\TextInput::make('visceral_fat')
+                                    ->label('Visceral Fat')
+                                    ->disabled()
+                                    ->suffix('level')
+                                    ->inlineLabel(),
+                            ]),
+                    ]),
+                Forms\Components\Textarea::make('notes_nutritionist')
+                    ->label('Nutritionist Notes')
+                    ->disabled()
+                    ->rows(2)
+                    ->placeholder('No nutritionist notes available...')
+                    ->columnSpanFull(),
+            ])
+            ->collapsible(),
+
+        Forms\Components\Section::make('Clinical Summary')
+            ->icon('heroicon-o-clipboard-document')
+            ->schema([
+                Forms\Components\Textarea::make('notes_psychologist')
+                    ->label('Psychology Notes')
+                    ->disabled()
+                    ->rows(2)
+                    ->placeholder('No psychology notes available...')
+                    ->columnSpanFull(),
+                Forms\Components\Textarea::make('notes_doctor')
+                    ->label('Medical Notes')
+                    ->disabled()
+                    ->rows(2)
+                    ->placeholder('No medical notes available...')
+                    ->columnSpanFull(),
+            ])
+            ->collapsible(),
+
+        Forms\Components\Section::make('Goal Setting')
+            ->description('Define patient goals and discussion')
+            ->icon('heroicon-o-flag')
+            ->schema([
+                Forms\Components\Textarea::make('goal')
+                    ->label('Goal')
+                    ->required()
+                    ->rows(3)
+                    ->placeholder('Enter the specific goal for the patient...')
+                    ->columnSpanFull(),
+                Forms\Components\Textarea::make('discussion')
+                    ->label('Discussion')
+                    ->rows(4)
+                    ->placeholder('Discuss the goal, action plan, and implementation strategy...')
+                    ->columnSpanFull(),
+            ])
+            ->collapsible(),
+    ])
+    ->fillForm(fn ($record) => array_merge(
+        $record->goals()->exists() ? $record->goals()->first()->toArray() : [],
+        $record->clinicals()->exists() ? $record->clinicals()->first()->toArray() : [],
+        $record->nutritions()->exists() ? $record->nutritions()->first()->toArray() : [],
+        $record->vitals()->exists() ? $record->vitals()->first()->toArray() : [],
+        [
+            'first_name'  => $record->first_name,
+            'middle_name' => $record->middle_name,
+            'surname'     => $record->surname,
+            'age'         => $record->age,
+            'phone'       => $record->phone,
+            'email'       => $record->email
+        ]
+    ))
+    ->action(function (array $data, $record) {
+        $data['registration_id'] = $record->id;
+        $data['user_id'] = auth()->id();
+        unset(
+            $data['first_name'],
+            $data['middle_name'],
+            $data['surname'],
+            $data['age'],
+            $data['phone'],
+            $data['email'],
+            $data['bp_systolic'],
+            $data['bp_diastolic'],
+            $data['pulse'],
+            $data['temp'],
+            $data['rbs'],
+            $data['height'],
+            $data['weight'],
+            $data['bmi'],
+            $data['lower_limit_weight'],
+            $data['weight_limit_weight'],
+            $data['visceral_fat'],
+            $data['body_fat_percent'],
+            $data['notes_nutritionist'],
+            $data['notes_psychologist'],
+            $data['notes_doctor']
+        );
         
-        return view('pdf.wellness-report', compact('record', 'vital', 'nutrition', 'currentDate'));
-    })
-    ->modalSubmitActionLabel('Download PDF')
-    ->action(function (Registration $record) {
-        // Download PDF action
-        return response()->streamDownload(function () use ($record) {
-            $vital = $record->vitals()->first();
-            $nutrition = $record->nutritions()->first();
-            $currentDate = now()->format('F j, Y');
-            
-            $html = view('pdf.wellness-report', compact('record', 'vital', 'nutrition', 'currentDate'))->render();
-            
-            $dompdf = new \Dompdf\Dompdf();
-            $dompdf->loadHtml($html);
-            $dompdf->setPaper('A4', 'portrait');
-            $dompdf->render();
-            echo $dompdf->output();
-        }, 'wellness-report-' . $record->id . '.pdf');
+        if ($record->goals()->exists()) {
+            $record->goals()->update($data);
+            Notification::make()
+                ->title('Goal updated successfully!')
+                ->success()
+                ->send();
+        } else {
+            Goal::create($data);
+            Notification::make()
+                ->title('Goal added successfully!')
+                ->success()
+                ->send();
+        }
     }),
 
+                # -------- VIEW REPORT --------
+                Action::make('viewReport')
+                    ->label('View Report')
+                    ->color('warning')
+                    ->icon('heroicon-o-eye')
+                    ->modalHeading(fn ($record) => 'Wellness Report - ' . $record->first_name . ' ' . $record->surname)
+                    ->modalContent(function (Registration $record) {
+                        // Generate PDF content directly in the modal
+                        $vital = $record->vitals()->first();
+                        $nutrition = $record->nutritions()->first();
+                        $currentDate = now()->format('F j, Y');
+
+                        return view('pdf.wellness-report', compact('record', 'vital', 'nutrition', 'currentDate'));
+                    })
+                    ->modalSubmitActionLabel('Download PDF')
+                    ->action(function (Registration $record) {
+                        // Download PDF action
+                        return response()->streamDownload(function () use ($record) {
+                            $vital = $record->vitals()->first();
+                            $nutrition = $record->nutritions()->first();
+                            $currentDate = now()->format('F j, Y');
+
+                            $html = view('pdf.wellness-report', compact('record', 'vital', 'nutrition', 'currentDate'))->render();
+
+                            $dompdf = new \Dompdf\Dompdf();
+                            $dompdf->loadHtml($html);
+                            $dompdf->setPaper('A4', 'portrait');
+                            $dompdf->render();
+                            echo $dompdf->output();
+                        }, 'wellness-report-' . $record->id . '.pdf');
+                    }),
+
                 # -------- DELETE --------
-                DeleteAction::make()->icon('heroicon-o-trash')->color('danger'),
+                DeleteAction::make()
+                    ->icon('heroicon-o-trash')
+                    ->color('danger'),
             ])
             ->bulkActions([
-                BulkAction::make('delete')->label('Delete Selected')->color('danger')->icon('heroicon-o-trash')->requiresConfirmation()->action(fn (Collection $records) => $records->each->delete()),
+                BulkAction::make('delete')
+                    ->label('Delete Selected')
+                    ->color('danger')
+                    ->icon('heroicon-o-trash')
+                    ->requiresConfirmation()
+                    ->action(fn (Collection $records) => $records->each->delete()),
             ]);
     }
 
@@ -382,8 +964,8 @@ Action::make('viewReport')
     {
         return [
             'index' => Pages\ListRegistrations::route('/'),
-            'create' => Pages\CreateRegistration::route('/create'),
-            'edit' => Pages\EditRegistration::route('/{record}/edit'),
+            // 'create' => Pages\CreateRegistration::route('/create'),
+            // 'edit' => Pages\EditRegistration::route('/{record}/edit'),
         ];
     }
 }

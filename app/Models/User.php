@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role', // Add role to fillable
     ];
 
     /**
@@ -44,5 +45,50 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function goals()
+    {
+        return $this->hasMany(Goal::class);
+    }
+
+    /**
+     * Check if user has admin role.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if user has staff role.
+     */
+    public function isStaff(): bool
+    {
+        return $this->role === 'staff';
+    }
+
+    /**
+     * Check if user has navigator role.
+     */
+    public function isNavigator(): bool
+    {
+        return $this->role === 'navigator';
+    }
+
+    /**
+     * Check if user has payer role.
+     */
+    public function isPayer(): bool
+    {
+        return $this->role === 'payer';
+    }
+
+    /**
+     * Check if user has physician role.
+     */
+    public function isPhysician(): bool
+    {
+        return $this->role === 'physician';
     }
 }

@@ -5,7 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\Registration;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 
-class CheckupSummaryWidget extends ApexChartWidget
+class WellnessSummaryWidget extends ApexChartWidget
 {
     protected static ?int $sort = 1;
     protected static ?string $chartId = 'checkupSummaryChart';

@@ -16,6 +16,7 @@ class VitalResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-heart';
     protected static ?string $navigationGroup = 'Checkup';
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function form(Form $form): Form
     {

@@ -46,6 +46,10 @@ class Registration extends Model
     return $this->belongsTo(Corporate::class, 'corporate_id');
 }
 
+  public function goals()
+    {
+        return $this->hasMany(Goal::class);
+    }
 
     public function user()
     {

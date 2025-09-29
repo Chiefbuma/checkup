@@ -16,6 +16,7 @@ class NutritionResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-cake';
     protected static ?string $navigationGroup = 'Checkup';
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function form(Form $form): Form
     {
